@@ -1,0 +1,322 @@
+// Main code created by iForImaginary 
+// 55-58 created by other genius players, which reduces attack time if used correctly 
+// 283-284 I learnt this trick from GitHUb-TheMatjaz at https://github.com/TheMatjaz/StoneScript/blob/master/06_icy_ridge.txt 
+/*
+This aims to collect resource at 5* with equipment ~5*+; except rocky plateau & icy ridge, no potion is required. 
+This DEFINITELY is NOT the optimal solution. Future updates are expected. 
+
+Requirements: 
+Stone: triskelion, ouroboros, star, mind 
+Hammer: dP, aether D, fire D, ice D 
+Sword: dP, poison D, dL, dF, dI
+Wand: dL, vigor D, dU, aether D, dF, fire D, dI, ice D
+Shield: ah, dashing 
+Lost: blade 
+Other: hatchet, shovel 
+
+Best time under wand dL & shield ah 7*, all others 6* condition, with pickup, no harvest: 
+rocky 1m45s 
+deadwood 37s
+caves: 37s
+mushroom: 1m28s
+haunted: 1m14s
+boiling: 1m6s
+icy: 1m59s (I personally hate icy)
+temple: 3m23s
+*/
+
+import Fishing
+// import Cosmetics/PetFrog
+// import Cosmetics/PetBoo
+
+// loop & time
+var f
+?loc.begin
+ var LoopCount=1
+ f=1
+?loc.loop
+ LoopCount++
+ f=2
+var AvgTime = loc.averageTime/30
+f++
+var t
+t=f/30
+>Run: @LoopCount@; AvT: @AvgTime@s; RT: @t@
+//^Loot: @item.GetTreasureCount()@/
+//^@item.GetTreasureLimit()@
+
+// testing
+//>@foe@||num:@foe.count@, d:@foe.distance@,
+//^sts:@foe.state@, dbnum:@foe.debuffs.count@
+//^||CDdash:@item.GetCoolDown(＂dashing＂)@
+//>@harvest@||@harvest.distance@
+
+
+?item.left.state=3 & foe.distance<23
+ equipL stones
+?item.right.state=3 & foe.distance<23
+ equipR stones
+
+
+func TimedEnd()
+ ?LoopCount>10
+   loc.leave()
+
+func HealWalk()
+   equipL triskelion
+   equipR ouroboros
+
+func BladeAbl()
+ equip blade
+ activate R
+
+
+// Rocky Plateau //
+?loc=rocky
+ ?potion=empty
+   brew tar
+ ?foe.distance>20
+   ?pickup.distance<=8
+     equipR star
+   /*:?harvest.distance<=8
+     equip shovel*/
+   :
+     HealWalk()
+ :
+   ?hp<15
+     activate P
+   ?foe=ice
+     equipL hammer fire D
+     equipR sword dF
+   :?foe=fire
+     equipL hammer aether D
+     equipR wand aether D
+   :?foe=aether
+     equipL wand dL
+     equipR sword dL
+   :?foe=vigor
+     equipL hammer dP
+     equipR sword poison D
+   :?foe=poison
+     equipL hammer ice D
+     equipR sword dI
+
+
+// Deadwood Canyon //
+?loc=deadwood
+ ?foe.distance>18
+   ?pickup.distance<=8
+     equipL triskelion
+     equipR star
+   /*:?harvest.distance<=8
+     equip hatchet
+     ?harvest.distance<=4 &
+     ^item.GetCoolDown(＂hatchet＂)<=0
+       activate R*/
+   :
+     HealWalk()
+ :
+   ?foe!boss
+     ?foe.count>=10 &
+     ^item.GetCoolDown(＂blade＂)<=0
+       BladeAbl()
+     ?foe!immune_to_ranged
+       equipL wand dL
+       equipR wand dI
+     :
+       equipL sword dF
+       equipR shield ah
+   :?foe=boss
+     ?foe.distance<=5
+       equipL sword dF
+       equipR sword dP
+     :
+       equipL sword dF
+       equipR shield dashing
+
+
+// Caves of Fear //
+?loc=caves
+ ?foe.distance>18
+   ?pickup.distance<=8
+     equipL triskelion
+     equipR star
+   :
+     HealWalk()
+ :
+   ?foe.count>=7 &
+   ^item.GetCoolDown(＂blade＂)<=0
+     BladeAbl()
+   :
+     equipR wand dI
+     ?hp!maxhp
+       equipL wand dL
+     :
+       equipL wand ice D
+
+
+// Mushroom Forest //
+?loc=fungus
+ ?foe.distance>18 & foe!boss
+   HealWalk()
+ :?foe.distance<=18 & foe!boss
+   ?foe.count>=5 & hp>=0.8*maxhp &
+   ^item.GetCoolDown(＂blade＂)<=0
+     BladeAbl()
+   :?hp>=0.9*maxhp
+     equipL wand dF
+     equipR wand dU
+   :
+     equipL wand dL
+     equipR wand dF
+ :?foe=Angry Shroom
+   ?foe.distance>=6
+     equip shield dashing
+   :
+     equipL hammer aP
+     equipR shield ah
+ :?foe=Morel
+   ?foe.distance>=6
+     equip shield dashing
+   :
+     equipL hammer aP
+     ?hp>0.75*maxhp
+       equipR sword dF
+     :
+       equipR sword dL
+ :?foe=Enoki
+   equipL sword dP
+   equipR shield ah
+
+
+// Huanted Hall //
+?loc=undead
+ ?foe.distance>18 & foe!boss
+   HealWalk()
+ :?foe.distance<=18 & foe!boss
+   ?foe.count>=6 & hp>0.75*maxhp &
+   ^item.GetCoolDown(＂blade＂)<=0
+     BladeAbl()
+   :?hp>0.75*maxhp
+     equipL wand dL
+     equipR wand vigor D
+   :
+     equipL wand dL
+     equipR shield ah
+ :?foe=boss & foe=phase1
+   equipL wand dL
+   equipR wand vigor D
+ :?foe=boss & foe=phase2
+   ?hp>0.75*maxhp
+     equipL wand dL
+     equipR wand vigor D
+   :
+     equipL wand dL
+     equipR shield ah
+
+
+// Boiling  Mine //
+?loc=bronze
+ ?foe!boss
+   ?foe.distance>20
+     HealWalk()
+     ?pickup.distance<=8
+       equipR star
+   :?foe.distance<=20
+     ?foe.count>=5 &
+     ^item.GetCoolDown(＂blade＂)<=0
+       BladeAbl()
+     :?foe=elemental
+       equipR shield ah
+       equipL wand aether D
+     :
+       equipR shield ah
+       equipL hammer aether D
+ ?foe=boss
+   ?hp!maxhp & foe.armor<50
+     equipR shield ah
+     equipL wand dL
+   :
+     equipR wand aether dU
+     equipL wand aether D
+
+
+// Icy Ridge //
+?loc=icy_ridge
+ ?potion=empty
+   brew tar
+ ?hp<16
+   activate P
+ ?foe!boss & foe!wall
+   ?foe.distance<24
+     ?foe.count>=5 &
+     ^item.GetCoolDown(＂blade＂)<=0
+       BladeAbl()
+     :
+       ?foe.distance>7
+         ?hp!maxhp
+           equipL wand dF
+           equipR wand dL
+         :
+           equipL wand dF
+           equipR wand fire D
+       :
+         equipL hammer fire D
+         equipR sword dF
+   :
+     HealWalk()
+ :
+   ?foe=boss & foe.distance<3
+     ?hp=maxhp
+       equipL hammer fire D
+       equipR sword dF
+     :
+       equipL sword dL
+       equipR sword dF
+   :?foe.state=133 | foe.state=143
+     equipL wand dF
+     equipR wand fire D
+   :?foe.distance>7 &
+   ^item.GetCoolDown(＂dashing＂)<=0
+     equipL wand dF
+     equipR shield dashing
+   :?foe=boss & foe.distance>2
+     equip shovel 
+   :
+     equipL hammer fire D
+     equipR sword dF
+
+
+// Temple //
+?loc=temple
+ ?potion=empty
+   brew wood+tar
+ ?foe.distance>20
+   HealWalk()
+ :
+   ?foe!boss
+     ?foe.count>5 &
+     ^item.GetCoolDown(＂blade＂)<=0
+       BladeAbl()
+     ?hp!maxhp
+       equipL wand dL
+       equipR wand dI
+     :
+       equipL wand ice D
+       equipR wand dI
+   :
+     ?hp<18
+       activate P
+     ?foe.state=112
+       equipL mind
+       equipR wand dI
+     :?foe.distance>5
+       equipL wand dI
+       equipR shield dashing
+     :
+       ?hp!maxhp
+         equipL sword dL
+         equipR sword dI
+       :
+         equipL hammer ice D
+         equipR sword dI
